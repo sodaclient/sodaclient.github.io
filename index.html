@@ -282,11 +282,76 @@
       const buy = card.querySelector("[data-buy]");
       if (buy) {
         buy.addEventListener("click", () => {
-          SODA.toast(card.dataset.product + ": оплата скоро — заглушка");
+          if ((card.dataset.product || "").toLowerCase().includes("visual")) return;
+          openPurchaseModal(card.dataset.product || "SodaDlc", card.querySelector(".period.active")?.dataset.price || "0",
+            card.querySelector(".period.active")?.dataset.suffix || "");
         });
       }
     });
   })();
 </script>
+
+<style>
+#purchaseModal{position:fixed;inset:0;z-index:99999;display:none;align-items:center;justify-content:center;padding:18px;background:rgba(0,0,0,.78);backdrop-filter:blur(8px)}
+#purchaseModal.open{display:flex}.purchase-box{width:min(520px,100%);max-height:90vh;overflow:auto;background:#111611;color:#f3f5f2;border:1px solid #394439;border-radius:20px;padding:24px;box-shadow:0 24px 90px #000a;position:relative}
+.purchase-box h2{margin:0 36px 8px 0;font-size:24px}.purchase-box p{color:#b8c2b7;line-height:1.55}.purchase-close{position:absolute;right:16px;top:14px;border:0;background:#222b22;color:white;border-radius:10px;width:36px;height:36px;font-size:22px;cursor:pointer}
+.purchase-options{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:20px 0}.purchase-option{border:1px solid #475347;background:#1b241b;color:#fff;border-radius:13px;padding:16px 12px;text-align:left;cursor:pointer;font:inherit}.purchase-option:hover{border-color:#9ddd72;background:#222f21}.purchase-option strong{display:block;margin-bottom:5px}.purchase-option span{font-size:13px;color:#b8c2b7}
+.purchase-detail{display:none;border:1px solid #354335;background:#171e17;border-radius:13px;padding:16px;margin-top:12px}.purchase-detail.show{display:block}.purchase-detail a{color:#b5ef8b}.purchase-small{font-size:12px!important;color:#9da89c!important}.purchase-back{margin-top:12px}
+@media(max-width:420px){.purchase-options{grid-template-columns:1fr}.purchase-box{padding:20px}}
+</style>
+<div id="purchaseModal" role="dialog" aria-modal="true" aria-labelledby="purchaseTitle">
+ <div class="purchase-box">
+  <button class="purchase-close" id="purchaseClose" aria-label="Закрыть">×</button>
+  <h2 id="purchaseTitle">Приобрести ключ</h2>
+  <p id="purchaseSummary">Выберите способ оплаты.</p>
+  <div class="purchase-options" id="purchaseOptions">
+   <button class="purchase-option" data-method="card"><strong>💳 Оплата рублями</strong><span>Перевод на карту</span></button>
+   <button class="purchase-option" data-method="gift"><strong>🎁 Подарок Telegram</strong><span>Подарок на нужную стоимость</span></button>
+  </div>
+  <div class="purchase-detail" id="cardDetail">
+   <strong>Оплата переводом на карту</strong>
+   <p>Реквизиты карты пока не указаны. Уточните их у продавца перед переводом.</p>
+   <p class="purchase-small">Не отправляйте деньги, пока не получите и не проверите реквизиты.</p>
+  </div>
+  <div class="purchase-detail" id="giftDetail">
+   <strong>Оплата подарком Telegram</strong>
+   <p>Отправьте в личные сообщения <a href="https://t.me/zirassov" target="_blank" rel="noopener">@zirassov</a> подарок Telegram стоимостью выбранного тарифа. После проверки оплаты вам выдадут ключ.</p>
+   <p class="purchase-small">Перед отправкой подарка согласуйте подходящий подарок и стоимость с продавцом.</p>
+   <a class="btn" href="https://t.me/zirassov" target="_blank" rel="noopener">Написать @zirassov</a>
+  </div>
+  <button class="btn ghost purchase-back" id="purchaseBack" style="display:none">Выбрать другой способ</button>
+ </div>
+</div>
+<script>
+(() => {
+ const modal=document.getElementById('purchaseModal');
+ const summary=document.getElementById('purchaseSummary');
+ const options=document.getElementById('purchaseOptions');
+ const card=document.getElementById('cardDetail');
+ const gift=document.getElementById('giftDetail');
+ const back=document.getElementById('purchaseBack');
+ function openPurchaseModal(product,price,period){
+   summary.textContent=product+' · '+price+' ₽ '+period+'. Выберите способ оплаты.';
+   options.style.display='grid';card.classList.remove('show');gift.classList.remove('show');back.style.display='none';
+   modal.classList.add('open');document.body.style.overflow='hidden';
+ }
+ window.openPurchaseModal=openPurchaseModal;
+ function close(){modal.classList.remove('open');document.body.style.overflow=''}
+ document.getElementById('purchaseClose').addEventListener('click',close);
+ modal.addEventListener('click',e=>{if(e.target===modal)close()});
+ document.addEventListener('keydown',e=>{if(e.key==='Escape')close()});
+ modal.querySelectorAll('[data-method]').forEach(btn=>btn.addEventListener('click',()=>{
+   options.style.display='none';card.classList.toggle('show',btn.dataset.method==='card');gift.classList.toggle('show',btn.dataset.method==='gift');back.style.display='inline-flex';
+ }));
+ back.addEventListener('click',()=>{options.style.display='grid';card.classList.remove('show');gift.classList.remove('show');back.style.display='none'});
+ // The visual-only product has no purchase flow, as requested.
+ document.querySelectorAll('.plan[data-product]').forEach(el=>{
+   if((el.dataset.product||'').toLowerCase().includes('visual')){
+     const b=el.querySelector('[data-buy]');if(b)b.addEventListener('click',e=>{e.preventDefault();});
+   }
+ });
+})();
+</script>
+
 </body>
 </html>
